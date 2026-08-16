@@ -57,15 +57,18 @@ quieras (`supabase.auth.updateUser()`), así que el que uses ahora es solo para 
 - Sitio en vivo (Vercel, producción): **https://jimenez-al-fuego.vercel.app**
 - Probado: el menú carga los productos reales desde Supabase en la URL pública.
 
-### Auto-deploy en cada push — falta 1 paso manual tuyo
+### Auto-deploy en cada push — pendiente (probamos, no salió)
 
-Quise conectar el repo de GitHub al proyecto de Vercel para que cada `git push` publique solo,
-pero Vercel pide un permiso de cuenta ("Login Connection" con GitHub) que no logré completar
-por automatización. Es un solo clic de tu parte:
+Intentamos conectar el repo de GitHub al proyecto de Vercel (vercel.com → avatar → Settings →
+Authentication → Connect en GitHub) para que cada `git push` publique solo. Ni por automatización
+ni con clic manual real abrió la ventana de autorización de GitHub — probablemente el bloqueador
+de ventanas emergentes de Chrome, o un problema puntual de Vercel ese momento.
 
-1. En el dashboard de Vercel (vercel.com) → proyecto `jimenez-al-fuego` → Settings → Git →
-   Connect Git Repository.
-2. Elegí `JFGz/jimenez-al-fuego` y confirmá.
+**No es necesario para que el sitio funcione** — ya está en producción y anda bien. Si en algún
+momento querés reintentarlo:
+1. Revisá que Chrome no esté bloqueando pop-ups para vercel.com (ícono en la barra de direcciones).
+2. vercel.com → tu avatar → Settings → Authentication → "Connect" en GitHub.
+3. Si abre la ventana de GitHub, autorizá. Si no abre nada, probá desde otro navegador o el celular.
 
 Mientras tanto, cada vez que quieras publicar un cambio, decime y corro:
 ```
