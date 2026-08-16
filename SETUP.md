@@ -51,10 +51,29 @@ página de Contacto, o `openAdminAccess()` en la consola) con ese correo y contr
 **Desde el panel, en Configuración**, podés cambiar el correo/contraseña del admin cuando
 quieras (`supabase.auth.updateUser()`), así que el que uses ahora es solo para arrancar.
 
-## Deploy (Netlify/Vercel)
+## Deploy — YA HECHO
 
-Quedó para después, como acordamos. Cuando quieras hacerlo: conectá el repo de GitHub a Netlify
-o Vercel (free tier), con `index.html` como raíz del sitio — cada `git push` publica solo.
+- Repo en GitHub: https://github.com/JFGz/jimenez-al-fuego
+- Sitio en vivo (Vercel, producción): **https://jimenez-al-fuego.vercel.app**
+- Probado: el menú carga los productos reales desde Supabase en la URL pública.
+
+### Auto-deploy en cada push — falta 1 paso manual tuyo
+
+Quise conectar el repo de GitHub al proyecto de Vercel para que cada `git push` publique solo,
+pero Vercel pide un permiso de cuenta ("Login Connection" con GitHub) que no logré completar
+por automatización. Es un solo clic de tu parte:
+
+1. En el dashboard de Vercel (vercel.com) → proyecto `jimenez-al-fuego` → Settings → Git →
+   Connect Git Repository.
+2. Elegí `JFGz/jimenez-al-fuego` y confirmá.
+
+Mientras tanto, cada vez que quieras publicar un cambio, decime y corro:
+```
+cd "PAGINA WEB"
+git add -A && git commit -m "mensaje"
+git push
+vercel --prod
+```
 
 ## Notas de seguridad
 
