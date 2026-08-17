@@ -619,6 +619,9 @@
     background:none; border:none; color:var(--text-dim); font-size:16px; padding:4px; cursor:pointer;
   }
   #admin-overlay .field-toggle-eye:hover{ color:var(--gold-light); }
+  #admin-overlay .login-remember { display:flex; align-items:center; gap:8px; margin: 2px 0 16px; text-align:left; }
+  #admin-overlay .login-remember input { width:16px; height:16px; accent-color: var(--orange); cursor:pointer; flex-shrink:0; }
+  #admin-overlay .login-remember label { font-size:12px; color:var(--text-dim); cursor:pointer; }
   #admin-overlay .login-btn {
     width:100%; background: linear-gradient(180deg, var(--orange), var(--orange-dark));
     border:none; color:#fff; font-weight:800; font-size:14.5px; letter-spacing:.5px;
@@ -998,7 +1001,7 @@
   #admin-overlay .tent-social-item .plat-ic.wa{ background: var(--green-wa); color:#0b1a10; }
   #admin-overlay .tent-social-item .plat-ic.tt{ background:#101010; color:#fff; box-shadow: 0 3px 8px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12); }
   #admin-overlay .tent-social-item .lbl { font-size:8px; color:var(--gold-light); font-weight:800; letter-spacing:.3px; margin:3px 0 8px; line-height:1.35; }
-  #admin-overlay .tent-social-item .qr-canvas-wrap { display:flex; justify-content:center; background:#fff; padding:2px; border-radius:3px; line-height:0; }
+  #admin-overlay .tent-social-item .qr-canvas-wrap { display:inline-flex; margin:0 auto; background:#fff; padding:2px; border-radius:3px; line-height:0; }
   #admin-overlay .tent-social-item .qr-canvas-wrap img { width:52px; height:52px; }
 
   #admin-overlay .tent-footer {
@@ -1135,6 +1138,14 @@
     border-radius:var(--radius-md); padding:16px 18px; font-size:13px; line-height:1.6; margin-bottom:20px;
   }
   #admin-overlay .jaf-noconfig b { color:#f0b8ae; }
+
+  #admin-overlay .jaf-bulkbar {
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background: rgba(224,138,44,.1); border:1px solid var(--gold-dim); border-radius:var(--radius-md);
+    padding:12px 16px; margin-bottom:16px;
+  }
+  #admin-overlay .jaf-bulkbar #pedidos-bulk-count { font-size:12.5px; font-weight:700; color:var(--gold-light); margin-right:auto; }
+  #admin-overlay .jaf-table input[type="checkbox"] { width:16px; height:16px; accent-color: var(--orange); cursor:pointer; }
 
   #admin-overlay .jaf-img-preview { width:76px; height:76px; border-radius:12px; object-fit:cover; border:1px solid rgba(212,163,74,.3); margin-bottom:10px; display:block; }
   #admin-overlay select.jaf-select-native {
@@ -1396,12 +1407,38 @@ if (document.readyState === 'loading') {
 var SUPABASE_URL = 'https://fgxdffeujbmhpqwdfeyr.supabase.co';
 var SUPABASE_ANON_KEY = 'sb_publishable_2z9HKGtusHgaR0VmdMO9-g_RlpwFIRD';
 
+/* "Mantener sesión iniciada en este dispositivo": cuando está tildado (por
+   defecto), la sesión de Supabase Auth se guarda en localStorage y persiste
+   entre visitas/reinicios del navegador. Si se destilda antes de loguearse,
+   la sesión vive solo en memoria y se pierde al cerrar la pestaña. */
+var JAF_REMEMBER_LOGIN = true;
+var jafMemorySession = {};
+var jafAuthStorage = {
+  getItem: function (key) {
+    if (Object.prototype.hasOwnProperty.call(jafMemorySession, key)) return jafMemorySession[key];
+    try { return window.localStorage.getItem(key); } catch (e) { return null; }
+  },
+  setItem: function (key, value) {
+    if (JAF_REMEMBER_LOGIN) {
+      delete jafMemorySession[key];
+      try { window.localStorage.setItem(key, value); } catch (e) { jafMemorySession[key] = value; }
+    } else {
+      jafMemorySession[key] = value;
+      try { window.localStorage.removeItem(key); } catch (e) {}
+    }
+  },
+  removeItem: function (key) {
+    delete jafMemorySession[key];
+    try { window.localStorage.removeItem(key); } catch (e) {}
+  }
+};
+
 var supa = null;
 (function(){
   var configured = SUPABASE_URL.indexOf('TU-PROYECTO') === -1 && SUPABASE_ANON_KEY.indexOf('TU_ANON_KEY_AQUI') === -1;
   if (configured && window.supabase && window.supabase.createClient) {
     try {
-      supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth: { storage: jafAuthStorage } });
     } catch (e) {
       console.warn('[Supabase] No se pudo inicializar el cliente:', e);
       supa = null;
@@ -1962,6 +1999,10 @@ var JAF = {
             <svg class="ic-svg eye-off" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M6.61 6.61C3.06 8.9 1 12 1 12s4 8 11 8a9.26 9.26 0 0 0 5.39-1.61"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
           </button>
         </div>
+      </div>
+      <div class="login-remember">
+        <input type="checkbox" id="login-remember" checked>
+        <label for="login-remember">Mantener la sesión iniciada en este dispositivo</label>
       </div>
       <button type="submit" class="login-btn"><svg class="ic-svg" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> INGRESAR</button>
       <p class="login-error" id="login-error">Ingresa un usuario y una contraseña.</p>
@@ -4556,6 +4597,8 @@ var qrcode = function() {
       var email = $('#login-user').value.trim();
       var pass = $('#login-pass').value.trim();
       if (!email || !pass) { setLoginError('Ingresa un usuario y una contraseña.'); return; }
+      var rememberEl = $('#login-remember');
+      JAF_REMEMBER_LOGIN = !rememberEl || rememberEl.checked;
       if (loginBtnEl) loginBtnEl.disabled = true;
       supa.auth.signInWithPassword({ email: email, password: pass }).then(function(r){
         if (loginBtnEl) loginBtnEl.disabled = false;
@@ -4742,13 +4785,26 @@ var qrcode = function() {
 
   /* ---------- PEDIDOS ---------- */
   var PEDIDO_ESTADOS = ['nuevo','preparando','listo','entregado','cancelado'];
+  var PEDIDO_ESTADO_LABEL = { nuevo:'Pendiente', preparando:'Preparando', listo:'Listo', entregado:'Entregada', cancelado:'Cancelada' };
   var pedidosChannel = null;
+  var pedidosSelected = {};
 
   function renderPedidosPanel(){
     var panel = $('#panel-pedidos');
-    panel.innerHTML = '<div class="content-header"><h1>Pedidos</h1><p>Pedidos hechos desde el menú del cliente.</p></div>';
+    panel.innerHTML = '<div class="content-header"><h1>Pedidos</h1><p>Pedidos hechos desde el menú del cliente. Marcá varios para cambiar el estado de todos a la vez.</p></div>';
     if (!supa) { panel.innerHTML += noConfigBox(); return; }
-    panel.innerHTML += '<div id="pedidos-body">' + loadingBox() + '</div>';
+    panel.innerHTML +=
+      '<div class="jaf-bulkbar" id="pedidos-bulkbar" style="display:none;">' +
+        '<span id="pedidos-bulk-count"></span>' +
+        '<select class="jaf-select-native" id="pedidos-bulk-estado" style="max-width:170px;">' +
+          PEDIDO_ESTADOS.map(function(e){ return '<option value="' + e + '">' + PEDIDO_ESTADO_LABEL[e] + '</option>'; }).join('') +
+        '</select>' +
+        '<button type="button" class="btn-solid" id="pedidos-bulk-apply" style="font-size:12px; padding:9px 16px;">Aplicar a selección</button>' +
+        '<button type="button" class="btn-ghost" id="pedidos-bulk-clear" style="font-size:12px; padding:9px 16px;">Cancelar selección</button>' +
+      '</div>' +
+      '<div id="pedidos-body">' + loadingBox() + '</div>';
+    pedidosSelected = {};
+    wirePedidosBulkbar();
     loadPedidos();
   }
 
@@ -4762,9 +4818,14 @@ var qrcode = function() {
         if (r.error) { body.innerHTML = errorBox('No se pudieron cargar los pedidos.'); return; }
         var rows = r.data || [];
         if (!rows.length) { body.innerHTML = '<div class="jaf-empty">Todavía no hay pedidos.</div>'; return; }
-        body.innerHTML = '<div class="jaf-table-wrap"><table class="jaf-table"><thead><tr><th>Fecha</th><th>Mesa</th><th>Items</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>' +
+        var validIds = {}; rows.forEach(function(p){ validIds[p.id] = true; });
+        Object.keys(pedidosSelected).forEach(function(id){ if (!validIds[id]) delete pedidosSelected[id]; });
+        body.innerHTML = '<div class="jaf-table-wrap"><table class="jaf-table"><thead><tr>' +
+          '<th><input type="checkbox" id="pedidos-select-all"></th>' +
+          '<th>Fecha</th><th>Mesa</th><th>Items</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>' +
           rows.map(pedidoRowHtml).join('') + '</tbody></table></div>';
-        wirePedidosRows(body, rows);
+        wirePedidosRows(body);
+        updatePedidosBulkbar();
       })
       .catch(function(){ var body = $('#pedidos-body'); if (body) body.innerHTML = errorBox('No se pudieron cargar los pedidos.'); });
   }
@@ -4775,9 +4836,11 @@ var qrcode = function() {
     if (items.length > 2) itemsTxt += ' +' + (items.length - 2) + ' más';
     var mesaTxt = (p.mesas && p.mesas.numero) ? ('Mesa ' + esc(p.mesas.numero)) : '—';
     var opts = PEDIDO_ESTADOS.map(function(e){
-      return '<option value="' + e + '"' + (e === p.estado ? ' selected' : '') + '>' + e.charAt(0).toUpperCase() + e.slice(1) + '</option>';
+      return '<option value="' + e + '"' + (e === p.estado ? ' selected' : '') + '>' + PEDIDO_ESTADO_LABEL[e] + '</option>';
     }).join('');
+    var checked = pedidosSelected[p.id] ? ' checked' : '';
     return '<tr data-id="' + p.id + '">' +
+      '<td><input type="checkbox" class="jaf-pedido-check" data-id="' + p.id + '"' + checked + '></td>' +
       '<td>' + fmtDate(p.created_at) + '</td>' +
       '<td>' + mesaTxt + '</td>' +
       '<td>' + (itemsTxt || '—') + '</td>' +
@@ -4785,6 +4848,20 @@ var qrcode = function() {
       '<td><select class="jaf-select-native jaf-pedido-estado" data-id="' + p.id + '">' + opts + '</select></td>' +
       '<td><div class="jaf-actions"><button class="jaf-btn-icon danger jaf-del-pedido" data-id="' + p.id + '" title="Eliminar">' + ICON_TRASH + '</button></div></td>' +
     '</tr>';
+  }
+
+  function updatePedidosBulkbar(){
+    var bar = $('#pedidos-bulkbar');
+    if (!bar) return;
+    var n = Object.keys(pedidosSelected).length;
+    bar.style.display = n > 0 ? 'flex' : 'none';
+    var countEl = $('#pedidos-bulk-count');
+    if (countEl) countEl.textContent = n + (n === 1 ? ' pedido seleccionado' : ' pedidos seleccionados');
+    var selectAll = $('#pedidos-select-all');
+    if (selectAll) {
+      var rowChecks = $all('.jaf-pedido-check');
+      selectAll.checked = rowChecks.length > 0 && rowChecks.every(function(c){ return c.checked; });
+    }
   }
 
   function wirePedidosRows(body){
@@ -4801,6 +4878,47 @@ var qrcode = function() {
         supa.from('pedidos').delete().eq('id', btn.getAttribute('data-id')).then(function(){ loadPedidos(); renderDashboard(); });
       });
     });
+    $all('.jaf-pedido-check', body).forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var id = cb.getAttribute('data-id');
+        if (cb.checked) pedidosSelected[id] = true; else delete pedidosSelected[id];
+        updatePedidosBulkbar();
+      });
+    });
+    var selectAll = $('#pedidos-select-all', body);
+    if (selectAll) {
+      selectAll.addEventListener('change', function(){
+        $all('.jaf-pedido-check', body).forEach(function(cb){
+          cb.checked = selectAll.checked;
+          var id = cb.getAttribute('data-id');
+          if (selectAll.checked) pedidosSelected[id] = true; else delete pedidosSelected[id];
+        });
+        updatePedidosBulkbar();
+      });
+    }
+  }
+
+  function wirePedidosBulkbar(){
+    var applyBtn = $('#pedidos-bulk-apply');
+    if (applyBtn) {
+      applyBtn.addEventListener('click', function(){
+        var ids = Object.keys(pedidosSelected);
+        if (!ids.length) return;
+        var estado = $('#pedidos-bulk-estado').value;
+        applyBtn.disabled = true;
+        supa.from('pedidos').update({ estado: estado }).in('id', ids).then(function(r){
+          applyBtn.disabled = false;
+          if (!r.error) { pedidosSelected = {}; loadPedidos(); renderDashboard(); }
+        }).catch(function(){ applyBtn.disabled = false; });
+      });
+    }
+    var clearBtn = $('#pedidos-bulk-clear');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', function(){
+        pedidosSelected = {};
+        loadPedidos();
+      });
+    }
   }
 
   function startPedidosRealtime(){
