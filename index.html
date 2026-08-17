@@ -5634,7 +5634,7 @@ var qrcode = function() {
 
   function captureCard(){
     if (typeof html2canvas === 'undefined') return Promise.reject(new Error('no-html2canvas'));
-    return html2canvas(document.getElementById('print-area'), { scale:3, backgroundColor:'#0c0603', useCORS:true });
+    return html2canvas(document.getElementById('print-area'), { scale:4, backgroundColor:'#0c0603', useCORS:true });
   }
 
   $('#btn-download-png').addEventListener('click', function(){
@@ -5658,8 +5658,8 @@ var qrcode = function() {
     captureCard().then(function(canvas){
       var jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
       if (!jsPDFCtor) { showMsg(msg, 'No se pudo cargar el generador de PDF. Revisá tu conexión.', false); return; }
-      // JPEG en vez de PNG: el archivo pesa ~10x menos y no se nota diferencia de calidad al imprimir.
-      var imgData = canvas.toDataURL('image/jpeg', 0.92);
+      // JPEG en vez de PNG: el archivo pesa varias veces menos sin perder calidad visible al imprimir.
+      var imgData = canvas.toDataURL('image/jpeg', 1.0);
       var doc = new jsPDFCtor({ unit:'mm', format:[100,148] });
       doc.addImage(imgData, 'JPEG', 0, 0, 100, 148);
       doc.addPage([100,148]);
