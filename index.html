@@ -1022,10 +1022,14 @@
   }
 
   /* ---- print media ---- */
+  @media screen{
+    .print-duplicate{ display:none; }
+  }
   @media print{
     body *{ visibility:hidden; }
-    #print-area, #print-area *{ visibility:visible; }
+    #print-area, #print-area *, .print-duplicate, .print-duplicate *{ visibility:visible; }
     #print-area{ position:absolute; top:0; left:0; margin:0; box-shadow:none; }
+    .print-duplicate{ position:absolute; top:0; left:0; margin:0; box-shadow:none; page-break-before: always; break-before: page; }
     .tent-card{ width:100mm; box-shadow:none; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .tent-card *{ -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   }
@@ -2050,7 +2054,16 @@ var JAF = {
               </select>
             </div>
             <button class="btn-ghost" id="btn-preview">VISTA PREVIA</button>
+            <button class="btn-ghost" id="btn-download-png"><svg class="ic-svg" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> IMAGEN</button>
+            <button class="btn-ghost" id="btn-download-pdf"><svg class="ic-svg" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> PDF</button>
             <button class="btn-solid" id="btn-print"><svg class="ic-svg" viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> IMPRIMIR</button>
+            <p class="jaf-msg" id="print-msg"></p>
+          </div>
+          <div class="jaf-noconfig" style="margin-bottom:20px;">
+            <b>Para que salga a doble cara:</b> el diseño ya se prepara en 2 páginas idénticas
+            (frente y dorso). En el diálogo de impresión de Windows, activá la opción
+            "Imprimir a doble cara" / "Dúplex" de tu impresora — eso lo controla la impresora,
+            no la página web.
           </div>
 
           <div class="print-preview-wrap">
@@ -4437,6 +4450,9 @@ var qrcode = function() {
 
 
 </script>
+<!-- Solo para el panel admin: exportar la carta de Impresión como PNG/PDF -->
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
 <script>
 
 (function(){
@@ -5584,8 +5600,78 @@ var qrcode = function() {
     showPanel('impresion');
     document.getElementById('print-area').scrollIntoView({behavior:'smooth', block:'center'});
   });
+
+  /* Duplica la tarjeta en una 2da página idéntica solo durante la impresión real
+     (frente y dorso), para que "Imprimir a doble cara" en el diálogo de la
+     impresora quede bien en ambos lados de la hoja. */
+  function withPrintDuplicate(action){
+    var original = document.getElementById('print-area');
+    var clone = original.cloneNode(true);
+    clone.removeAttribute('id');
+    clone.classList.add('print-duplicate');
+    original.parentNode.insertBefore(clone, original.nextSibling);
+    var cleaned = false;
+    function cleanup(){
+      if (cleaned) return;
+      cleaned = true;
+      if (clone.parentNode) clone.parentNode.removeChild(clone);
+      window.removeEventListener('afterprint', cleanup);
+    }
+    window.addEventListener('afterprint', cleanup);
+    setTimeout(cleanup, 8000);
+    action();
+  }
+
   $('#btn-print').addEventListener('click', function(){
-    window.print();
+    withPrintDuplicate(function(){ window.print(); });
+  });
+
+  function printAreaFilename(ext){
+    var mesa = $('#mesa-select').value;
+    var base = mesa ? ('jimenez-al-fuego-mesa-' + mesa) : 'jimenez-al-fuego-menu';
+    return base + '.' + ext;
+  }
+
+  function captureCard(){
+    if (typeof html2canvas === 'undefined') return Promise.reject(new Error('no-html2canvas'));
+    return html2canvas(document.getElementById('print-area'), { scale:3, backgroundColor:'#0c0603', useCORS:true });
+  }
+
+  $('#btn-download-png').addEventListener('click', function(){
+    var msg = $('#print-msg');
+    showMsg(msg, 'Generando imagen…', true);
+    captureCard().then(function(canvas){
+      canvas.toBlob(function(blob){
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = printAreaFilename('png');
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+        showMsg(msg, 'Imagen descargada.', true);
+      }, 'image/png');
+    }).catch(function(){ showMsg(msg, 'No se pudo generar la imagen. Revisá tu conexión e intentá de nuevo.', false); });
+  });
+
+  $('#btn-download-pdf').addEventListener('click', function(){
+    var msg = $('#print-msg');
+    showMsg(msg, 'Generando PDF…', true);
+    captureCard().then(function(canvas){
+      var jsPDFCtor = window.jspdf && window.jspdf.jsPDF;
+      if (!jsPDFCtor) { showMsg(msg, 'No se pudo cargar el generador de PDF. Revisá tu conexión.', false); return; }
+      // JPEG en vez de PNG: el archivo pesa ~10x menos y no se nota diferencia de calidad al imprimir.
+      var imgData = canvas.toDataURL('image/jpeg', 0.92);
+      var doc = new jsPDFCtor({ unit:'mm', format:[100,148] });
+      doc.addImage(imgData, 'JPEG', 0, 0, 100, 148);
+      doc.addPage([100,148]);
+      doc.addImage(imgData, 'JPEG', 0, 0, 100, 148);
+      var blob = doc.output('blob');
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = printAreaFilename('pdf');
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
+      showMsg(msg, 'PDF descargado (2 páginas iguales, listo para imprimir a doble cara).', true);
+    }).catch(function(){ showMsg(msg, 'No se pudo generar el PDF. Revisá tu conexión e intentá de nuevo.', false); });
   });
 
 })();
