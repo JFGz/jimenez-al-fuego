@@ -991,9 +991,10 @@
     flex:1; background: linear-gradient(160deg, rgba(12,7,4,.62), rgba(8,5,3,.72));
     border:1px solid rgba(224,138,44,.4); border-radius:14px; padding:12px 6px 10px; text-align:center;
     box-shadow: 0 8px 18px rgba(0,0,0,.35);
+    display:flex; flex-direction:column; align-items:center;
   }
   #admin-overlay .tent-social-item .plat-ic {
-    width:30px; height:30px; margin:0 auto 6px; border-radius:50%;
+    width:30px; height:30px; margin:0 0 6px; border-radius:50%;
     display:flex; align-items:center; justify-content:center; font-size:15px;
     box-shadow: 0 3px 8px rgba(0,0,0,.35);
   }
@@ -1001,7 +1002,7 @@
   #admin-overlay .tent-social-item .plat-ic.wa{ background: var(--green-wa); color:#0b1a10; }
   #admin-overlay .tent-social-item .plat-ic.tt{ background:#101010; color:#fff; box-shadow: 0 3px 8px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.12); }
   #admin-overlay .tent-social-item .lbl { font-size:8px; color:var(--gold-light); font-weight:800; letter-spacing:.3px; margin:3px 0 8px; line-height:1.35; }
-  #admin-overlay .tent-social-item .qr-canvas-wrap { display:inline-flex; margin:0 auto; background:#fff; padding:2px; border-radius:3px; line-height:0; }
+  #admin-overlay .tent-social-item .qr-canvas-wrap { display:flex; justify-content:center; background:#fff; padding:2px; border-radius:3px; }
   #admin-overlay .tent-social-item .qr-canvas-wrap img { width:52px; height:52px; }
 
   #admin-overlay .tent-footer {
@@ -5755,7 +5756,7 @@ var qrcode = function() {
 
   function captureCard(){
     if (typeof html2canvas === 'undefined') return Promise.reject(new Error('no-html2canvas'));
-    return html2canvas(document.getElementById('print-area'), { scale:4, backgroundColor:'#0c0603', useCORS:true });
+    return html2canvas(document.getElementById('print-area'), { scale:5, backgroundColor:'#0c0603', useCORS:true, imageTimeout:0, logging:false });
   }
 
   $('#btn-download-png').addEventListener('click', function(){
